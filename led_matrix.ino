@@ -48,9 +48,10 @@ void putByte(byte data) {
             digitalWrite(dataIn, LOW); // send 0
         }
         // delayMicroseconds(CLOCKDELAY);
+        //the max7219 wants a clock delay of 50ns. digitalWrite isn't anywhere near that fast, so don't worry about it
         digitalWrite(clock, HIGH);   // tock
         // delayMicroseconds(CLOCKDELAY);
-        --i;                         // move to lesser bit
+        i--;                         // move to lesser bit
     }
 }
 
@@ -98,19 +99,25 @@ void maxOne(byte maxNr, byte reg, byte col) {
     digitalWrite(load, HIGH);
 }
 
+void updateDisplay(){
+    for(byte j = 0; j < 7; j++){
+        digitalWrite(load, LOW);  // begin
+        delayMicroseconds(1);
+        for(int i = MAXCHIPS; i > 0; i--){
+            putByte(j+1);
+            putByte(framebuffer[i-1][j]);
+            // maxOne(i, j+1, framebuffer[i-1][j]);
+        }
+        // digitalWrite(load, LOW); // and load
+        digitalWrite(load, HIGH);
+    }
+
+}
 
 void writechar(char in, int seg){
     for(int i=0; i<7; i++){
         framebuffer[seg][i] = pgm_read_byte_near( &(font[in][i]) );
         //maxOne(seg,i+1,font[in][i]);
-    }
-}
-
-void updateDisplay(){
-  for(int i = 0; i < MAXCHIPS; i++){
-        for(int j = 0; j < 7; j++){
-             maxOne(i+1, j+1, framebuffer[i][j]);
-        }
     }
 }
 
@@ -175,7 +182,7 @@ void loop () {
         for(int k=0; k<6; k++){
             updateDisplay();
             shiftLeft();
-            delay(200);
+            delay(150);
         }
     }
 }
