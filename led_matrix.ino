@@ -2,14 +2,12 @@
 #include "font.h"
 
 #define CLOCKDELAY 100
-#define MAXCHIPS 4
+#define MAXCHIPS 3 //change this variable to set how many MAX7219's you'll use
 
 
 int dataIn = 2;
 int load = 3;
 int clock = 4;
-
-int maxInUse = MAXCHIPS;    //change this variable to set how many MAX7219's you'll use
 
 int e = 0;
 int count = 0;
@@ -18,15 +16,7 @@ String text = "";   //text to display
 int length = 0;    //length of the text
 
 //framebuffer initialization
-char framebuffer[7][MAXCHIPS+1] = {
-    {0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0}
-};
+char framebuffer[MAXCHIPS+1][8] = { { 0 } };
 
 
 // define max7219 registers
@@ -57,9 +47,9 @@ void putByte(byte data) {
         else{
             digitalWrite(dataIn, LOW); // send 0
         }
-        delayMicroseconds(CLOCKDELAY);
+        // delayMicroseconds(CLOCKDELAY);
         digitalWrite(clock, HIGH);   // tock
-        delayMicroseconds(CLOCKDELAY);
+        // delayMicroseconds(CLOCKDELAY);
         --i;                         // move to lesser bit
     }
 }
@@ -75,7 +65,7 @@ void maxSingle(byte reg, byte col) {
 void maxAll(byte reg, byte col) {    // initialize  all  MAX7219's in the system
     int c = 0;
     digitalWrite(load, LOW);  // begin
-    for ( c =1; c<= maxInUse; c++) {
+    for ( c = 1; c <= MAXCHIPS; c++) {
         putByte(reg);  // specify register
         putByte(col);//((data & 0x01) * 256) + data >> 1); // put data
     }
@@ -91,7 +81,7 @@ void maxOne(byte maxNr, byte reg, byte col) {
     int c = 0;
     digitalWrite(load, LOW);  // begin
 
-    for ( c = maxInUse; c > maxNr; c--) {
+    for ( c = MAXCHIPS; c > maxNr; c--) {
         putByte(0);    // means no operation
         putByte(0);    // means no operation
     }
@@ -110,44 +100,46 @@ void maxOne(byte maxNr, byte reg, byte col) {
 
 
 void writechar(char in, int seg){
-    for(int i=0;i<7;i++){
-        framebuffer[i][seg] = (pgm_read_byte_near(&(font[in][i])));
+    for(int i=0; i<7; i++){
+        framebuffer[seg][i] = pgm_read_byte_near( &(font[in][i]) );
         //maxOne(seg,i+1,font[in][i]);
     }
 }
 
 void updateDisplay(){
- for(int i=0;i<maxInUse;i++){
-        for(int j=0;j<7;j++){
-             maxOne(i+1,j+1,framebuffer[j][i]);
+  for(int i = 0; i < MAXCHIPS; i++){
+        for(int j = 0; j < 7; j++){
+             maxOne(i+1, j+1, framebuffer[i][j]);
         }
     }
 }
 
 void shiftLeft(){
- for(int j=0;j<7;j++){
-     framebuffer[j][0]/=2; // move the whole first segment one left, discard extra value
-     for(int i=1;i<maxInUse+1;i++){
-            if((framebuffer[j][i]) & 0x1){ //is odd
-                framebuffer[j][i-1]+= 16;
+    for(int j = 0; j < 7; j++){
+        framebuffer[0][j] /= 2; // move the whole first segment one left, discard extra value
+
+        //loop through remaining segments
+        for(int i = 1; i <= MAXCHIPS; i++){
+
+            //if the LSB of the segment is set, set the 'MSB' (0x10) of the segment to the left 
+            if((framebuffer[i][j]) & 0x1){ //is odd
+                framebuffer[i-1][j] += 0x10;
             }
-            framebuffer[j][i]/=2;
+            framebuffer[i][j] /= 2;
         }
     }
 }
 
 void invertFrame(int seg){
     for(int i=0;i<7;i++){
-             framebuffer[i][seg] = (~framebuffer[i][seg] & 0x3f);
-     }
+        framebuffer[seg][i] = (~framebuffer[seg][i] & 0x3f); //
+    }
 }
 
 void clearFrame(){
-     for(int i=0;i<7;i++){
-         for(int j=0;j<MAXCHIPS+1;j++){
-             framebuffer[i][j] = 0;
-         }
-     }
+    for(int i=0; i<=MAXCHIPS; i++){
+        memset(framebuffer[i], 0, 7);
+    }
 }
 
 void setup () {
@@ -160,7 +152,7 @@ void setup () {
 
     //initiation of the max 7219
     maxAll(max7219_reg_scanLimit, 0x07);
-    maxAll(max7219_reg_decodeMode, 0x00);  // using an led matrix (not digits)
+    maxAll(max7219_reg_decodeMode, 0x00);  // using an led matrix (not 7 segment)
     maxAll(max7219_reg_shutdown, 0x01);    // not in shutdown mode
     maxAll(max7219_reg_displayTest, 0x00); // no display test
     for (e=1; e<=8; e++) {    // empty registers, turn all LEDs off
@@ -174,13 +166,13 @@ void setup () {
 }
 
 void loop () {
-    for(int i=0;i<length;i++){
+    for(int i=0; i<length; i++){
         writechar(text[i],MAXCHIPS);
         //invertFrame(MAXCHIPS);
-        //updateDisplay();
+        // updateDisplay();
+        // shiftLeft();
         //delay(100);
-        shiftLeft();
-        for(int k=0;k<5;k++){
+        for(int k=0; k<6; k++){
             updateDisplay();
             shiftLeft();
             delay(200);
