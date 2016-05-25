@@ -57,24 +57,22 @@ void putByte(byte data) {
         else{
             digitalWrite(dataIn, LOW); // send 0
         }
-        //delayMicroseconds(CLOCKDELAY);
+        delayMicroseconds(CLOCKDELAY);
         digitalWrite(clock, HIGH);   // tock
-        //delayMicroseconds(CLOCKDELAY);
+        delayMicroseconds(CLOCKDELAY);
         --i;                         // move to lesser bit
     }
 }
 
-void maxSingle( byte reg, byte col) {
-    //maxSingle is the "easy"  function to use for a     //single max7219
-
+void maxSingle(byte reg, byte col) {
     digitalWrite(load, LOW);       // begin
     putByte(reg);                  // specify register
     putByte(col);//((data & 0x01) * 256) + data >> 1); // put data
-    digitalWrite(load, LOW);       // and load da shit
-    digitalWrite(load,HIGH);
+    digitalWrite(load, LOW);       // and load
+    digitalWrite(load, HIGH);
 }
 
-void maxAll (byte reg, byte col) {    // initialize  all  MAX7219's in the system
+void maxAll(byte reg, byte col) {    // initialize  all  MAX7219's in the system
     int c = 0;
     digitalWrite(load, LOW);  // begin
     for ( c =1; c<= maxInUse; c++) {
@@ -82,12 +80,13 @@ void maxAll (byte reg, byte col) {    // initialize  all  MAX7219's in the syste
         putByte(col);//((data & 0x01) * 256) + data >> 1); // put data
     }
     digitalWrite(load, LOW);
-    digitalWrite(load,HIGH);
+    digitalWrite(load, HIGH);
 }
 
 void maxOne(byte maxNr, byte reg, byte col) {
     //maxOne is for adressing different MAX7219's,
-    //whilele having a couple of them cascaded
+    //while having a couple of them cascaded
+    //this is really inefficient, especially with a framebuffer
 
     int c = 0;
     digitalWrite(load, LOW);  // begin
@@ -105,7 +104,7 @@ void maxOne(byte maxNr, byte reg, byte col) {
         putByte(0);    // means no operation
     }
 
-    digitalWrite(load, LOW); // and load da shit
+    digitalWrite(load, LOW); // and load
     digitalWrite(load, HIGH);
 }
 
