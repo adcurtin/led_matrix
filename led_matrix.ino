@@ -101,15 +101,15 @@ void maxOne(byte maxNr, byte reg, byte col) {
 
 void updateDisplay(){
     for(byte j = 0; j < 7; j++){
-        digitalWrite(load, LOW);  // begin
-        delayMicroseconds(1);
+        // digitalWrite(load, LOW);  // begin
+        // delayMicroseconds(1);
         for(int i = MAXCHIPS; i > 0; i--){
-            putByte(j+1);
-            putByte(framebuffer[i-1][j]);
-            // maxOne(i, j+1, framebuffer[i-1][j]);
+            // putByte(j+1);
+            // putByte(framebuffer[i-1][j]);
+            maxOne(i, j+1, framebuffer[i-1][j]);
         }
         // digitalWrite(load, LOW); // and load
-        digitalWrite(load, HIGH);
+        // digitalWrite(load, HIGH);
     }
 
 }
@@ -175,14 +175,14 @@ void setup () {
 void loop () {
     for(int i=0; i<length; i++){
         writechar(text[i],MAXCHIPS);
-        //invertFrame(MAXCHIPS);
+        // invertFrame(MAXCHIPS);
         // updateDisplay();
         // shiftLeft();
         //delay(100);
         for(int k=0; k<6; k++){
             updateDisplay();
             shiftLeft();
-            delay(150);
+            delay(200);
         }
     }
 }
